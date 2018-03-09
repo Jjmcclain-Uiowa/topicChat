@@ -45,8 +45,9 @@ if __name__ == '__main__':
                 # get reg_json and extract topic
                 reg_json = json.loads(client_socket.recv(256).decode('utf-8'))
                 topic = reg_json['topic']
+                username = reg_json['source']['username']
                 print('Received registration JSON, registering client to topic')
-                print('New Client registered to ' + topic)
+                print(username + ' registered to ' + topic)
                 print('------')
 
                 # add client_socket to topicMap or add topic
@@ -83,12 +84,3 @@ if __name__ == '__main__':
                             topicDict[topic].remove(sock)
                     except:
                         continue
-
-
-
-
-
-
-
-
-
