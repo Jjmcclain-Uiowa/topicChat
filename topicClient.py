@@ -21,6 +21,7 @@ if __name__ == '__main__':
     # connect the client_socket to the server
     client_socket.connect(addr)
     print('connected to server!')
+    print('------')
 
     # create registration 'json'
     reg_json = json.dumps({
@@ -33,16 +34,18 @@ if __name__ == '__main__':
 
     # send reg_json to the socket
     client_socket.sendall(bytes(reg_json, 'utf-8'))
+    print('Sent Registration JSON, Type your message!')
+    print('------')
 
     while True:
 
-        to_read, to_write, _ = select.select([client_socket], [client_socket], [])
-        to_read.append(sys.stdin)
+        to_read, _, _ = select.select([client_socket, sys.stdin], [], [])
 
+        #
         if sys.stdin in to_read:
 
             # get msg, convert it to 'json'
-            msg = input('Msg: ')
+            msg = input()
             msg_json = json.dumps({
                             'source': {
                                 'ip': 'localhost',
@@ -58,17 +61,14 @@ if __name__ == '__main__':
                             }
             })
 
-            # remove sys.stdin from to_read
-            # to_read.remove(sys.stdin)
-
             # send msg_json to socket
             client_socket.send(bytes(msg_json, 'utf-8'))
-            print('json sent')
 
         # if there is data from the server
         if client_socket in to_read:
+
             # get data, convert it to json, extract text
-            msg_json = json.loads(client_socket.recv(256))
+            msg_json = json.loads(client_socket.recv(256).decode('utf-8'))
             text = msg_json['message']['text']
 
             # print text

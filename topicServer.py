@@ -10,7 +10,9 @@ if __name__ == '__main__':
         print('invalid arguments')
         sys.exit(0)
 
-    print('Waiting for connection')
+    print('------')
+    print('>>>Waiting for connection<<<')
+    print('------')
 
     # create a socket, bind it to the port num given, listen for connections
     addr = ('localhost', int(sys.argv[1]))
@@ -19,7 +21,7 @@ if __name__ == '__main__':
     server_socket.listen(5)
 
     # create some variables to be used later
-    topicMap = {}
+    topicDict = {}
     clients = []
     to_write = []
 
@@ -28,7 +30,7 @@ if __name__ == '__main__':
         to_read.append(server_socket)
 
         # select statement
-        socks_to_read, socks_to_write, _ = select.select(to_read, to_write, [])
+        socks_to_read, _, _ = select.select(to_read, [], [])
 
         # check all the sockets in socks_to_read
         for sock in socks_to_read:
@@ -41,31 +43,46 @@ if __name__ == '__main__':
                 clients.append(client_socket)
 
                 # get reg_json and extract topic
-                data = client_socket.recv(256)
-                reg_json = json.loads(data)
+                reg_json = json.loads(client_socket.recv(256).decode('utf-8'))
                 topic = reg_json['topic']
-                print('received: ', reg_json)
-                print('New Client registered to topic ', topic)
+                print('Received registration JSON, registering client to topic')
+                print('New Client registered to ' + topic)
+                print('------')
 
                 # add client_socket to topicMap or add topic
-                if topic not in topicMap:
-                    topicMap[topic] = [client_socket]
+                if topic not in topicDict:
+                    topicDict[topic] = [client_socket]
                 else:
-                    topicMap[topic].append(client_socket)
-
+                    topicDict[topic].append(client_socket)
 
             # else there must be an incoming message
             else:
                 # get the data and convert it to json, extract topic
-                msg_json = json.loads(sock.recv(256))
-                print('received ', msg_json['message']['text'])
-                topic = msg_json['message']['topic']
+                data = sock.recv(256).decode('utf-8')
+                if data:
+                    msg_json = json.loads(data)
+                    print('Received message JSON: ' + msg_json['message']['text'])
+                    print('------')
+                    topic = msg_json['message']['topic']
+                    # send message to all sockets in topic
+                    for s in topicDict[topic]:
+                        # except itself
+                        if s != sock:
+                            s.sendall(bytes(json.dumps(msg_json), 'utf-8'))
+                    print(msg_json['message']['text'] + ' sent to all clients in ' + topic)
 
-                # send message to all sockets in topic
-                for s in topicMap[topic]:
-                    if s != sock:
-                        sock.sendall(bytes(json.dumps(msg_json), 'utf-8'))
-                        print('message sent')
+                # if no data, client has disconnected
+                else:
+                    print('Client has disconnected from ' + topic)
+
+                    # close socket, remove from client list and topicDict
+                    sock.close()
+                    try:
+                        clients.remove(sock)
+                        for topic in topicDict:
+                            topicDict[topic].remove(sock)
+                    except:
+                        continue
 
 
 
