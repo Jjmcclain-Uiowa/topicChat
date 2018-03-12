@@ -21,7 +21,7 @@ if __name__ == '__main__':
     server_socket.listen(5)
 
     # create some variables to be used later
-    topicDict = {}
+    room_dict = {}
     clients = []
     to_write = []
 
@@ -38,49 +38,52 @@ if __name__ == '__main__':
             # check to see if it is a connection request
             if sock == server_socket:
 
-                # accept connection, create socket, get client address, and add socket to clients list
+                # accept connection, create socket, get client address,
+                # and add socket to clients list
                 (client_socket, client_addr) = server_socket.accept()
                 clients.append(client_socket)
 
-                # get reg_json and extract topic
+                # get reg_json and extract room
                 reg_json = json.loads(client_socket.recv(256).decode('utf-8'))
-                topic = reg_json['topic']
+                room = reg_json['room']
                 username = reg_json['source']['username']
-                print('Received registration JSON, registering client to topic')
-                print(username + ' registered to ' + topic)
+                print('Received registration JSON,'
+                      'registering user to chat room')
+                print(username + ' has joined ' + room)
                 print('------')
 
-                # add client_socket to topicMap or add topic
-                if topic not in topicDict:
-                    topicDict[topic] = [client_socket]
+                # add client_socket to room_dict or add room
+                if room not in room_dict:
+                    room_dict[room] = [client_socket]
                 else:
-                    topicDict[topic].append(client_socket)
+                    room_dict[room].append(client_socket)
 
             # else there must be an incoming message
             else:
-                # get the data and convert it to json, extract topic
+                # get the data and convert it to json, extract room
                 data = sock.recv(256).decode('utf-8')
                 if data:
                     msg_json = json.loads(data)
-                    print('Received message JSON: ' + msg_json['message']['text'])
+                    print('Received message: ' + msg_json['message']['text'])
                     print('------')
-                    topic = msg_json['message']['topic']
-                    # send message to all sockets in topic
-                    for s in topicDict[topic]:
+                    room = msg_json['message']['room']
+                    # send message to all sockets in room
+                    for s in room_dict[room]:
                         # except itself
                         if s != sock:
                             s.sendall(bytes(json.dumps(msg_json), 'utf-8'))
-                    print(msg_json['message']['text'] + ' sent to all clients in ' + topic)
+                    print(msg_json['message']['text'] +
+                          ' sent to all users in ' + room)
 
                 # if no data, client has disconnected
                 else:
-                    print('Client has disconnected from ' + topic)
+                    print('Client has disconnected from ' + room)
 
-                    # close socket, remove from client list and topicDict
+                    # close socket, remove from client list and room_dict
                     sock.close()
                     try:
                         clients.remove(sock)
-                        for topic in topicDict:
-                            topicDict[topic].remove(sock)
-                    except:
+                        for room in room_dict:
+                            room_dict[room].remove(sock)
+                    except ValueError:
                         continue

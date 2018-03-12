@@ -5,22 +5,26 @@ import select
 
 if __name__ == '__main__':
 
-    # extract ip, port#, and topic from command line arguments
+    # extract ip, port#, and room from command line arguments
     addr_list = sys.argv[1].split(':')
     addr = (addr_list[0], int(addr_list[1]))
-    topic = sys.argv[2]
+    username = sys.argv[2]
 
     # Create a socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # get chat room
+    room = input('Which chat room would you like to join: ')
 
     # try to connect the client_socket to the server
     connected = False
     while not connected:
         try:
+            print('Attempting to connect to ' + str(addr))
             client_socket.connect(addr)
             connected = True
-            print('connected to server!')
-            print('------')
+            print('Connected to server!')
+
         except socket.error:
             print('Failed to Connect. :( retry? y/n')
             msg = input()
@@ -29,14 +33,9 @@ if __name__ == '__main__':
                 sys.exit(0)
             elif msg == 'y':
                 print('Attempting to reconnect')
+                print(addr)
             else:
                 print('Input not recognized, reconnecting anyways')
-
-    # Get Username
-    print('------')
-    username = input('Choose a Username: ')
-    if username == "":
-        username = 'Anonymous'
 
     # create message 'json'
     reg_json = json.dumps({
@@ -45,12 +44,12 @@ if __name__ == '__main__':
                             'port': addr_list[1],
                             'username': username
                     },
-                    'topic': topic},
+                    'room': room},
                 )
 
     # send reg_json to the socket
     client_socket.sendall(bytes(reg_json, 'utf-8'))
-    print('You have been registered with the server!')
+    print('You have joined ' + room + '!')
     print('(type -q to exit)')
     print('Start Chatting!')
     print('------')
@@ -74,7 +73,7 @@ if __name__ == '__main__':
                                 'port': addr_list[1]
                             },
                             'message': {
-                                'topic': topic,
+                                'room': room,
                                 'text': msg,
                                 'username': username
                             }
@@ -96,4 +95,4 @@ if __name__ == '__main__':
             sending_user = msg_json['message']['username']
 
             # print text
-            print(sending_user + '(' + topic + '): ' + text)
+            print(sending_user + ': ' + text)
