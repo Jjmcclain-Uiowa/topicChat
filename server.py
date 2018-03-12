@@ -85,5 +85,5 @@ if __name__ == '__main__':
                         clients.remove(sock)
                         for room in room_dict:
                             room_dict[room].remove(sock)
-                    except:
+                    except ValueError:
                         continue

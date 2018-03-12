@@ -20,10 +20,11 @@ if __name__ == '__main__':
     connected = False
     while not connected:
         try:
+            print('Attempting to connect to ' + str(addr))
             client_socket.connect(addr)
             connected = True
-            print('connected to server!')
-            print('------')
+            print('Connected to server!')
+
         except socket.error:
             print('Failed to Connect. :( retry? y/n')
             msg = input()
@@ -32,6 +33,7 @@ if __name__ == '__main__':
                 sys.exit(0)
             elif msg == 'y':
                 print('Attempting to reconnect')
+                print(addr)
             else:
                 print('Input not recognized, reconnecting anyways')
 
@@ -47,7 +49,7 @@ if __name__ == '__main__':
 
     # send reg_json to the socket
     client_socket.sendall(bytes(reg_json, 'utf-8'))
-    print('You have been registered with the server!')
+    print('You have joined ' + room + '!')
     print('(type -q to exit)')
     print('Start Chatting!')
     print('------')
@@ -93,4 +95,4 @@ if __name__ == '__main__':
             sending_user = msg_json['message']['username']
 
             # print text
-            print(sending_user + '(' + room + '): ' + text)
+            print(sending_user + ': ' + text)
