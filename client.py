@@ -5,13 +5,16 @@ import select
 
 if __name__ == '__main__':
 
-    # extract ip, port#, and topic from command line arguments
+    # extract ip, port#, and room from command line arguments
     addr_list = sys.argv[1].split(':')
     addr = (addr_list[0], int(addr_list[1]))
-    topic = sys.argv[2]
+    username = sys.argv[2]
 
     # Create a socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # get chat room
+    room = input('Which chat room would you like to join: ')
 
     # try to connect the client_socket to the server
     connected = False
@@ -32,12 +35,6 @@ if __name__ == '__main__':
             else:
                 print('Input not recognized, reconnecting anyways')
 
-    # Get Username
-    print('------')
-    username = input('Choose a Username: ')
-    if username == "":
-        username = 'Anonymous'
-
     # create message 'json'
     reg_json = json.dumps({
                     'source': {
@@ -45,7 +42,7 @@ if __name__ == '__main__':
                             'port': addr_list[1],
                             'username': username
                     },
-                    'topic': topic},
+                    'room': room},
                 )
 
     # send reg_json to the socket
@@ -74,7 +71,7 @@ if __name__ == '__main__':
                                 'port': addr_list[1]
                             },
                             'message': {
-                                'topic': topic,
+                                'room': room,
                                 'text': msg,
                                 'username': username
                             }
@@ -96,4 +93,4 @@ if __name__ == '__main__':
             sending_user = msg_json['message']['username']
 
             # print text
-            print(sending_user + '(' + topic + '): ' + text)
+            print(sending_user + '(' + room + '): ' + text)
